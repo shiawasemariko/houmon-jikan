@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>訪問録 - 訪問時間記録</title>
+<style>
+  :root{
+    --paper:#F6F2E8;
+    --paper-deep:#EFE8D8;
+    --ink:#2B2A28;
+    --ink-soft:#6B675E;
+    --indigo:#2C4A63;
+    --indigo-deep:#1D3446;
+    --indigo-soft:#DCE6EA;
+    --shu:#B33B1E;
+    --shu-soft:#F3DCD4;
+    --line:#D8D0BC;
+    --line-strong:#B7AD90;
+    --ok:#3E6B4F;
+    --white:#FFFDF8;
+    --radius:3px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP","Meiryo",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:1400px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  .masthead{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding-bottom:18px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .seal{
+    width:52px;height:52px;border-radius:50%;
+    background:var(--shu);
+    color:var(--white);
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:13px;
+    letter-spacing:1px;
+    writing-mode:vertical-rl;
+    flex:none;
+    box-shadow:0 0 0 2px var(--paper), 0 0 0 3px var(--shu);
+  }
+  .masthead h1{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    letter-spacing:2px;
+    color:var(--ink);
+  }
+  .masthead p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.5px;
+  }
+  .masthead-spacer{flex:1;}
+  .save-status{
+    font-size:12px;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+  }
+  .save-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);transition:background .2s;}
+  .save-dot.busy{background:#C9A227;}
+
+  .sync-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:var(--indigo-soft);
+    color:var(--indigo-deep);
+    border-radius:var(--radius);
+    padding:8px 14px;
+    font-size:12px;
+    margin-bottom:14px;
+  }
+
+  /* ---------- Period bar ---------- */
+  .period-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .mode-group{
+    display:flex;
+    gap:6px;
+    padding-right:10px;
+    margin-right:4px;
+    border-right:1px solid var(--line);
+  }
+  .mode-btn{
+    border:1px solid var(--line-strong);
+    background:var(--paper);
+    color:var(--ink-soft);
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12px;
+    cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+    white-space:nowrap;
+  }
+  .mode-btn:hover{ border-color:var(--indigo); color:var(--indigo-deep); }
+  .mode-btn.active{
+    background:var(--indigo-deep);
+    border-color:var(--indigo-deep);
+    color:var(--white);
+    font-weight:600;
+  }
+  .period-nav-btn{
+    width:32px;height:32px;
+    border:1px solid var(--line-strong);
+    background:var(--paper);
+    color:var(--indigo-deep);
+    border-radius:50%;
+    font-size:15px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+  }
+  .period-nav-btn:hover{background:var(--indigo-soft);}
+  .period-label{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:17px;
+    font-weight:600;
+    color:var(--indigo-deep);
+    min-width:250px;
+    text-align:center;
+  }
+  .period-label small{
+    display:block;font-size:11px;font-weight:400;color:var(--ink-soft);
+    font-family:inherit;letter-spacing:.5px;margin-top:1px;
+  }
+  .jump-group{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .jump-group input,.jump-group select{
+    border:1px solid var(--line-strong);
+    background:var(--white);
+    color:var(--ink);
+    padding:6px 8px;
+    border-radius:var(--radius);
+    font-size:12.5px;
+    font-family:inherit;
+  }
+  .jump-group input[type=number]{ width:70px; }
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .tab-btn{
+    border:1px solid var(--line-strong);
+    background:var(--white);
+    color:var(--ink-soft);
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .tab-btn:hover{ border-color:var(--indigo); color:var(--indigo-deep); }
+  .tab-btn.active{
+    background:var(--indigo-deep);
+    border-color:var(--indigo-deep);
+    color:var(--white);
+    font-weight:600;
+  }
+  .tabs-note{
+    align-self:center;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-left:6px;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    border:1px solid var(--line-strong);
+    background:var(--white);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:var(--radius);
+    font-size:13px;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:background .15s,border-color .15s;
+  }
+  .btn:hover{border-color:var(--indigo);background:var(--indigo-soft);}
+  .btn.primary{background:var(--indigo);border-color:var(--indigo);color:var(--white);}
+  .btn.primary:hover{background:var(--indigo-deep);}
+  .btn.danger{color:var(--shu);border-color:var(--shu-soft);}
+  .btn.danger:hover{background:var(--shu-soft);}
+  .btn:disabled{opacity:.4;cursor:default;}
+
+  /* ---------- Table ---------- */
+  .table-shell{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .table-scroll{
+    overflow:auto;
+    max-height:66vh;
+  }
+  table{
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:12.5px;
+    min-width:100%;
+  }
+  th,td{
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    padding:0;
+    white-space:nowrap;
+  }
+  thead th{
+    position:sticky;top:0;
+    background:var(--indigo-deep);
+    color:var(--white);
+    font-weight:500;
+    padding:7px 4px;
+    z-index:3;
+    font-size:11.5px;
+    text-align:center;
+  }
+  thead tr.weekday-row th{ top:34px; padding:4px; font-size:11px;}
+  th.col-name,th.col-role{ background:var(--indigo-deep); }
+  td.col-name,td.col-role{
+    position:sticky;
+    background:var(--white);
+    z-index:2;
+    padding:6px 8px;
+    font-size:12.5px;
+  }
+  td.col-name{left:0; min-width:118px; font-weight:600; border-right:1px solid var(--line-strong);}
+  td.col-role{left:118px; min-width:96px; color:var(--ink-soft); border-right:2px solid var(--line-strong);}
+  th.col-name{left:0; min-width:118px; z-index:4;}
+  th.col-role{left:118px; min-width:96px; z-index:4; border-right:2px solid var(--indigo-deep);}
+
+  td.day-cell{ width:42px; min-width:42px; text-align:center; padding:0;}
+  td.day-cell input{
+    width:100%;
+    border:none;
+    background:transparent;
+    text-align:center;
+    padding:7px 0;
+    font-size:12.5px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  td.day-cell input:focus{
+    outline:2px solid var(--indigo);
+    outline-offset:-2px;
+    background:var(--indigo-soft);
+  }
+  td.day-cell input::-webkit-outer-spin-button,
+  td.day-cell input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0;}
+  td.day-cell input[type=number]{ -moz-appearance:textfield;}
+  td.day-cell input::placeholder{ color:#C9C2AC;}
+
+  td.day-cell select.count-select{
+    width:100%;
+    border:none;
+    background:transparent;
+    text-align:center;
+    text-align-last:center;
+    padding:7px 2px;
+    font-size:12.5px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+    -webkit-appearance:none;
+    appearance:none;
+    font-family:inherit;
+  }
+  td.day-cell select.count-select:focus{
+    outline:2px solid var(--indigo);
+    outline-offset:-2px;
+    background:var(--indigo-soft);
+  }
+
+  th.sun,td.sun-col{ color:var(--shu); }
+  thead th.sun{ background:#5A2418; }
+  th.sat,td.sat-col{ color:var(--indigo-soft); }
+  thead th.sat{ background:#1D3446; }
+
+  /* 土日・祝日は薄いピンクで背景を塗る（元Excelの配色に合わせる） */
+  td.day-cell.holiday-col{ background:#FBE3E3; }
+  td.day-cell.holiday-col.sun-col{ background:#FBE3E3; }
+  td.day-cell.holiday-col.sat-col{ background:#E7EEF6; }
+  td.day-cell.holiday-col input,
+  td.day-cell.holiday-col select.count-select{ background:transparent; }
+  td.day-cell.holiday-col.readonly-cell{ background:#FBE3E3; }
+  thead th.holiday-col{ background:#8A4A4A; }
+  thead th.holiday-col.sun{ background:#5A2418; }
+  thead th.holiday-col.sat{ background:#1D3446; }
+
+  /* スタッフごとの定休日（曜日固定の休み） */
+  td.day-cell.staff-off{
+    background:repeating-linear-gradient(135deg, #EDEAE0, #EDEAE0 6px, #E3DFD1 6px, #E3DFD1 12px);
+  }
+  td.day-cell.staff-off input,
+  td.day-cell.staff-off select.count-select{ color:#B7AD90; }
+
+  /* 個別の休み（有給など、その日だけの休み） */
+  td.day-cell{ position:relative; }
+  td.day-cell .leave-toggle{
+    position:absolute;
+    top:1px; right:1px;
+    width:13px; height:13px;
+    margin:0;
+    cursor:pointer;
+    z-index:1;
+    opacity:.55;
+  }
+  td.day-cell .leave-toggle:checked{ opacity:1; }
+  td.day-cell.leave-day{
+    background:repeating-linear-gradient(135deg, #EAD9D9, #EAD9D9 6px, #DFC3C3 6px, #DFC3C3 12px) !important;
+  }
+  td.day-cell.leave-day input,
+  td.day-cell.leave-day select.count-select{ color:#9B7A7A; }
+
+  .offday-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .offday-chip{
+    border:1px solid var(--line-strong);
+    background:var(--paper);
+    color:var(--ink-soft);
+    border-radius:999px;
+    padding:5px 12px;
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .offday-chip.active{
+    background:var(--indigo-deep);
+    border-color:var(--indigo-deep);
+    color:var(--white);
+    font-weight:600;
+  }
+
+  td.sum-col,th.sum-col{
+    background:var(--paper-deep);
+    text-align:center;
+    font-weight:600;
+    padding:7px 6px;
+    min-width:56px;
+  }
+  th.sum-col{background:#3B5A70;}
+  td.total-strong{ color:var(--indigo-deep); font-weight:700;}
+
+  tr.group-subtotal td{
+    background:var(--indigo-soft);
+    font-weight:700;
+    color:var(--indigo-deep);
+    padding-top:6px;padding-bottom:6px;
+  }
+  tr.group-subtotal td.col-name{background:var(--indigo-soft);}
+  tr.group-subtotal td.col-role{background:var(--indigo-soft);}
+
+  tr.grand-total td{
+    background:var(--ink);
+    color:var(--white);
+    font-weight:700;
+    padding-top:8px;padding-bottom:8px;
+  }
+  tr.grand-total td.col-name{background:var(--ink); color:var(--white);}
+  tr.grand-total td.col-role{background:var(--ink); color:var(--white);}
+
+  tr.staff-row:hover td.col-name,
+  tr.staff-row:hover td.col-role{ background:#FBF8EF; }
+
+  .row-edit-btn{
+    border:none;background:none;color:var(--ink-soft);
+    cursor:pointer;font-size:12px;margin-left:6px;
+    opacity:0; transition:opacity .12s;
+  }
+  tr.staff-row:hover .row-edit-btn{opacity:1;}
+
+  /* ---------- Count summary ---------- */
+  .count-summary{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    padding:14px 16px;
+    background:var(--paper-deep);
+    border-bottom:1px solid var(--line);
+  }
+  .count-summary:empty{ display:none; padding:0; border-bottom:none; }
+  .summary-group h4{
+    margin:0 0 6px;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--indigo-deep);
+    letter-spacing:.5px;
+  }
+  .summary-badges{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .badge{
+    background:var(--white);
+    border:1px solid var(--line-strong);
+    border-radius:999px;
+    padding:5px 12px;
+    font-size:12px;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .badge b{ color:var(--indigo-deep); font-size:13px; margin:0 2px; }
+  .badge.total{
+    background:var(--indigo-deep);
+    border-color:var(--indigo-deep);
+    color:var(--white);
+    font-weight:600;
+  }
+  .badge.total b{ color:var(--white); }
+
+  .summary-staff-list{
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px dashed var(--line-strong);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .summary-staff-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .summary-staff-name{
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    min-width:84px;
+  }
+  .badge.small{
+    padding:3px 9px;
+    font-size:11px;
+    background:var(--paper);
+  }
+  .badge.small b{ font-size:11.5px; }
+  .badge.small.total{
+    background:var(--indigo-soft);
+    border-color:var(--indigo-soft);
+    color:var(--indigo-deep);
+  }
+  .badge.small.total b{ color:var(--indigo-deep); }
+
+  /* ---------- Count table specifics ---------- */
+  tr.duration-row td.col-name{ background:var(--white); }
+  tr.duration-row td.col-role{ color:var(--ink-soft); font-weight:400; font-size:11.5px; padding-left:18px; }
+  tr.duration-row:hover td.col-name,
+  tr.duration-row:hover td.col-role{ background:#FBF8EF; }
+  tr.duration-total-row td.col-role{ font-weight:700; color:var(--indigo-deep); }
+  tr.duration-total-row td{ background:#FAF7EF; }
+  tr.duration-total-row td.col-name{ background:#FAF7EF; }
+  tr.duration-total-row td.col-role{ background:#FAF7EF; }
+  td.day-cell.readonly-cell{
+    text-align:center;
+    font-size:12.5px;
+    font-variant-numeric:tabular-nums;
+    color:var(--indigo-deep);
+    font-weight:600;
+    padding:7px 0;
+  }
+  td.day-cell.blank-cell{ background:transparent; }
+
+  .empty-state{
+    padding:60px 20px;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  .empty-state .seal{margin:0 auto 16px;}
+  .empty-state h2{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:18px;color:var(--ink);margin:0 0 6px;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;
+    background:rgba(43,42,40,.45);
+    display:flex;align-items:center;justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  .modal{
+    background:var(--white);
+    border-radius:4px;
+    width:100%;max-width:380px;
+    padding:22px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal h3{
+    margin:0 0 16px;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:17px;color:var(--indigo-deep);
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .field{margin-bottom:13px;}
+  .field label{
+    display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;letter-spacing:.5px;
+  }
+  .field input[type=text],.field select{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius);
+    padding:8px 9px;
+    font-size:13.5px;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  .field input[type=text]:focus,.field select:focus{ outline:2px solid var(--indigo); outline-offset:-1px;}
+  .modal-actions{
+    display:flex;justify-content:space-between;
+    margin-top:18px;gap:8px;
+  }
+  .modal-actions .right{display:flex;gap:8px;}
+
+  @media (max-width:640px){
+    .masthead h1{font-size:20px;}
+    .period-label{font-size:14.5px;min-width:0;}
+    .jump-group{margin-left:0;width:100%;order:5;}
+    .app{padding:16px 10px 60px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="masthead">
+    <div class="seal">訪問録</div>
+    <div>
+      <h1>訪問時間記録</h1>
+      <p>訪問看護・リハビリ 個人訪問時間管理（暦月・16日〆の2パターン対応）</p>
+    </div>
+    <div class="masthead-spacer"></div>
+    <div class="save-status"><span class="save-dot" id="saveDot"></span><span id="saveText">保存済み</span></div>
+  </header>
+
+  <div class="sync-bar" id="syncBar" style="display:none;">
+    <span id="syncBarLabel"></span>
+    <button class="btn" id="syncBarRefreshBtn" style="padding:4px 10px;font-size:11.5px;">🔄 最新を取得</button>
+  </div>
+
+  <div class="period-bar">
+    <div class="mode-group">
+      <button class="mode-btn active" id="modeCycleBtn" data-mode="cycle">16日〆（16日〜翌月15日）</button>
+      <button class="mode-btn" id="modeCalendarBtn" data-mode="calendar">暦月（1日〜月末）</button>
+    </div>
+    <button class="period-nav-btn" id="prevPeriod" title="前の期間">‹</button>
+    <div class="period-label" id="periodLabel">－</div>
+    <button class="period-nav-btn" id="nextPeriod" title="次の期間">›</button>
+    <div class="jump-group">
+      <input type="number" id="jumpYear" title="年">年
+      <select id="jumpMonth"></select>月へ移動
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabTimeBtn" data-view="time">訪問時間</button>
+    <button class="tab-btn" id="tabCountBtn" data-view="count">訪問件数</button>
+    <span class="tabs-note">「訪問件数」を入力すると、日ごとの合計時間が自動で「訪問時間」に反映されます</span>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" id="addStaffBtn">＋ スタッフ追加</button>
+    <button class="btn" id="exportBtn">CSV書き出し（時間・件数）</button>
+    <button class="btn" id="sheetSettingsBtn">🔗 スプレッドシート連携</button>
+    <button class="btn danger" id="clearPeriodBtn">この期間の入力をクリア</button>
+  </div>
+
+  <div class="table-shell" id="timeTableShell">
+    <div class="table-scroll" id="tableScroll">
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="seal">訪問録</div>
+        <h2>まだスタッフが登録されていません</h2>
+        <p>「＋ スタッフ追加」から看護師・リハビリスタッフを登録してください。</p>
+      </div>
+      <table id="mainTable" style="display:none;">
+        <thead>
+          <tr id="headDayRow"></tr>
+          <tr class="weekday-row" id="headWeekdayRow"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="table-shell" id="countTableShell" style="display:none;">
+    <div class="count-summary" id="countSummary"></div>
+    <div class="table-scroll" id="countTableScroll">
+      <div class="empty-state" id="countEmptyState" style="display:none;">
+        <div class="seal">訪問録</div>
+        <h2>まだスタッフが登録されていません</h2>
+        <p>「＋ スタッフ追加」から看護師・リハビリスタッフを登録してください。</p>
+      </div>
+      <table id="countTable" style="display:none;">
+        <thead>
+          <tr id="headCountDayRow"></tr>
+          <tr class="weekday-row" id="headCountWeekdayRow"></tr>
+        </thead>
+        <tbody id="countTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal">
+    <h3 id="modalTitle">スタッフ追加</h3>
+    <div class="field">
+      <label>氏名</label>
+      <input type="text" id="fldName" placeholder="例）東城佑佳">
+    </div>
+    <div class="field">
+      <label>区分（集計グループ）</label>
+      <select id="fldCategory">
+        <option value="看護">看護</option>
+        <option value="リハビリ">リハビリ</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>職種（表示名）</label>
+      <input type="text" id="fldRole" placeholder="例）正看護師 / PT　理学" list="roleSuggest">
+      <datalist id="roleSuggest">
+        <option value="正看護師">
+        <option value="准看護師">
+        <option value="PT　理学">
+        <option value="OT　作業">
+        <option value="ST　言語">
+      </datalist>
+    </div>
+    <div class="field">
+      <label>定休日（決まった休みの曜日があれば選択）</label>
+      <div class="offday-chips" id="offdayChips"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="deleteStaffBtn" style="display:none;">削除</button>
+      <div class="right">
+        <button class="btn" id="modalCancelBtn">キャンセル</button>
+        <button class="btn primary" id="modalSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="sheetModalOverlay" style="display:none;">
+  <div class="modal">
+    <h3>複数端末でデータを共有</h3>
+    <p style="font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:-6px;">
+      Google Apps Scriptで発行した「ウェブアプリ」のURLを設定すると、パソコン・iPadなど複数の端末から
+      同じデータを見たり入力したりできるようになります。URLを設定した端末は、その時点の最新データを取得します。
+    </p>
+    <div class="field">
+      <label>ウェブアプリURL（.../exec）</label>
+      <input type="text" id="fldSheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <p id="sheetSyncStatus" style="font-size:11.5px;color:var(--ink-soft);min-height:16px;"></p>
+    <div class="modal-actions">
+      <button class="btn" id="sheetSyncNowBtn">接続して取得</button>
+      <div class="right">
+        <button class="btn" id="sheetModalCancelBtn">閉じる</button>
+        <button class="btn primary" id="sheetModalSaveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const WEEKDAY_JA = ['日','月','火','水','木','金','土'];
+  const NURSE_DURATIONS = ['20分','30分','1時間','1.5時間','2時間'];
+  const REHAB_DURATIONS = ['20分','40分','60分'];
+  const COUNT_MAX = 10; // 訪問件数プルダウンの選択上限（1日あたり）
+  const DURATION_HOURS = {
+    '20分': 1/3,
+    '30分': 0.5,
+    '1時間': 1,
+    '1.5時間': 1.5,
+    '2時間': 2,
+    '40分': 2/3,
+    '60分': 1
+  };
+  function durationsForCategory(cat){
+    return cat === 'リハビリ' ? REHAB_DURATIONS : NURSE_DURATIONS;
+  }
+
+  let staffList = [];        // [{id,name,category,role}]
+  let dailyTime = {};        // {staffId: {'YYYY-MM-DD': hours}}
+  let dailyCounts = {};      // {staffId: {'YYYY-MM-DD': {duration: count}}}
+  let leaveDates = {};       // {staffId: {'YYYY-MM-DD': true}}  有給・個別の休み
+  let periodMode = 'cycle';  // 'cycle' (16日〆) | 'calendar' (暦月)
+  let currentYear, currentMonth;
+  let periodDays = [];       // array of Date objects for current view
+  let editingStaffId = null;
+  let currentView = 'time';  // 'time' | 'count'
+  let timeSaveTimer = null;
+  let countSaveTimer = null;
+  let sheetUrl = '';
+  let sheetSyncTimer = null;
+  let sharedModeActive = false; // sheetUrlが設定されていて、実際に通信できている状態
+
+  const $ = (id) => document.getElementById(id);
+
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function dateKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+  // ---------- 祝日判定 ----------
+  // 「内閣府 祝日データ」を公開しているAPI（holidays-jp.github.io）から取得し、
+  // 端末内にキャッシュする。取得できない場合はキャッシュ、それも無ければ土日のみで判定する。
+  let holidaySet = new Set();
+  async function loadHolidays(){
+    try{
+      const cached = await storageGet('holidays-jp');
+      if(cached){
+        try{ holidaySet = new Set(Object.keys(JSON.parse(cached))); }catch(e){}
+      }
+    }catch(e){}
+    try{
+      const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
+      if(res.ok){
+        const data = await res.json();
+        holidaySet = new Set(Object.keys(data));
+        storageSet('holidays-jp', JSON.stringify(data));
+      }
+    }catch(e){
+      // オフライン等で取得できない場合は、キャッシュ済み（あれば）または土日のみの判定にフォールバック
+    }
+  }
+  function isHolidayOrWeekend(d){
+    const wd = d.getDay();
+    if(wd === 0 || wd === 6) return true;
+    return holidaySet.has(dateKey(d));
+  }
+
+  function getPeriodDates(mode, y, m){
+    let start, end;
+    if(mode === 'calendar'){
+      start = new Date(y, m-1, 1);
+      end = new Date(y, m, 0);
+    } else {
+      start = new Date(y, m-1, 16);
+      end = new Date(y, m, 15);
+    }
+    const days = [];
+    let d = new Date(start);
+    while(d <= end){
+      days.push(new Date(d));
+      d.setDate(d.getDate()+1);
+    }
+    return days;
+  }
+
+  function periodLabelText(mode, y, m){
+    if(mode === 'calendar'){
+      return {main:`${y}年${m}月　1日 〜 月末`, sub:`${y}年${m}月度（暦月）`};
+    }
+    const start = new Date(y, m-1, 16);
+    const end = new Date(y, m, 15);
+    const fmt = (dt) => `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日`;
+    return {main:`${fmt(start)} 〜 ${fmt(end)}`, sub:`${y}年${m}月度（16日〆）`};
+  }
+
+  // このアプリは、ブラウザの localStorage を「その端末内のキャッシュ」として使います。
+  // Googleスプレッドシート連携（sheetUrl）を設定すると、そちらが複数端末共有の正となり、
+  // 通信できない時だけこのキャッシュにフォールバックします。
+  const LS_PREFIX = 'visit-time-app:';
+  async function storageGet(key){
+    try{
+      const v = window.localStorage.getItem(LS_PREFIX + key);
+      return v === null ? null : v;
+    }catch(e){
+      return null;
+    }
+  }
+  async function storageSet(key, value){
+    try{
+      window.localStorage.setItem(LS_PREFIX + key, value);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function setSaveStatus(state){
+    const dot = $('saveDot'), text = $('saveText');
+    if(state === 'saving'){ dot.classList.add('busy'); text.textContent = '保存中…'; }
+    else if(state === 'error'){ dot.classList.remove('busy'); text.textContent = '保存に失敗しました'; dot.style.background = '#B33B1E'; }
+    else { dot.classList.remove('busy'); dot.style.background = ''; text.textContent = sharedModeActive ? '共有スプレッドシートに保存済み' : '保存済み（この端末のみ）'; }
+  }
+
+  async function loadStaffList(){
+    const raw = await storageGet('staff-list');
+    if(raw){ try{ staffList = JSON.parse(raw); }catch(e){ staffList = []; } }
+    else { staffList = []; }
+  }
+  async function saveStaffListLocal(){
+    await storageSet('staff-list', JSON.stringify(staffList));
+  }
+
+  async function loadDailyData(){
+    const rawTime = await storageGet('daily-time');
+    dailyTime = rawTime ? (JSON.parse(rawTime) || {}) : {};
+    const rawCounts = await storageGet('daily-counts');
+    dailyCounts = rawCounts ? (JSON.parse(rawCounts) || {}) : {};
+    const rawLeave = await storageGet('leave-dates');
+    leaveDates = rawLeave ? (JSON.parse(rawLeave) || {}) : {};
+  }
+  async function saveDailyTimeLocal(){
+    await storageSet('daily-time', JSON.stringify(dailyTime));
+  }
+  async function saveDailyCountsLocal(){
+    await storageSet('daily-counts', JSON.stringify(dailyCounts));
+  }
+  async function saveLeaveDatesLocal(){
+    await storageSet('leave-dates', JSON.stringify(leaveDates));
+  }
+
+  async function loadSheetSettings(){
+    const rawUrl = await storageGet('sheet-webapp-url');
+    sheetUrl = rawUrl || '';
+  }
+  async function saveSheetSettings(){
+    await storageSet('sheet-webapp-url', sheetUrl);
+  }
+
+  // ---------- 共有スプレッドシートとの通信 ----------
+  function pushOp(op, payload){
+    if(!sheetUrl) return;
+    const withPeriod = Object.assign({
+      periodMode: periodMode,
+      periodYear: currentYear,
+      periodMonth: currentMonth
+    }, payload, {op});
+    fetch(sheetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(withPeriod)
+    }).catch(() => { /* no-corsのため成否は確認できない。ローカルキャッシュには保存済み */ });
+  }
+
+  async function fetchSharedState(){
+    if(!sheetUrl) return null;
+    try{
+      const res = await fetch(sheetUrl, {method:'GET'});
+      const data = await res.json();
+      if(data && data.ok){
+        return { staffList: data.staffList || [], dailyTime: data.dailyTime || {}, dailyCounts: data.dailyCounts || {}, leaveDates: data.leaveDates || {} };
+      }
+      return null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function refreshFromSheet(showStatus){
+    if(!sheetUrl) return false;
+    updateSyncBar();
+    if(showStatus){ setSyncBarStatus('取得中…'); }
+    const state = await fetchSharedState();
+    if(!state){
+      sharedModeActive = false;
+      updateSyncBar();
+      if(showStatus){ setSyncBarStatus('共有データを取得できませんでした。この端末のデータのまま表示しています。'); }
+      return false;
+    }
+    sharedModeActive = true;
+    staffList = state.staffList;
+    dailyTime = state.dailyTime;
+    dailyCounts = state.dailyCounts;
+    leaveDates = state.leaveDates;
+    await saveStaffListLocal();
+    await saveDailyTimeLocal();
+    await saveDailyCountsLocal();
+    await saveLeaveDatesLocal();
+    updateSyncBar();
+    if(showStatus){ setSyncBarStatus('最新の状態を取得しました（' + new Date().toLocaleTimeString('ja-JP') + '）'); }
+    return true;
+  }
+
+  function setSyncBarStatus(text){
+    const el = $('syncBarLabel');
+    if(el) el.textContent = text;
+  }
+  function updateSyncBar(){
+    const bar = $('syncBar');
+    if(!bar) return;
+    if(!sheetUrl){ bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    $('syncBarLabel').textContent = sharedModeActive ? '🔗 複数端末で共有中' : '⚠ 共有データを取得できていません（この端末のみのデータを表示中）';
+  }
+
+  function getDayValue(staffId, date){
+    const rec = dailyTime[staffId];
+    if(!rec) return 0;
+    return Number(rec[dateKey(date)]) || 0;
+  }
+  function setDayValue(staffId, date, value){
+    if(!dailyTime[staffId]) dailyTime[staffId] = {};
+    const key = dateKey(date);
+    if(value){ dailyTime[staffId][key] = value; }
+    else { delete dailyTime[staffId][key]; }
+  }
+  function getCountValue(staffId, date, duration){
+    const rec = dailyCounts[staffId];
+    if(!rec) return 0;
+    const dayRec = rec[dateKey(date)];
+    if(!dayRec) return 0;
+    return Number(dayRec[duration]) || 0;
+  }
+  function setCountValue(staffId, date, duration, value){
+    if(!dailyCounts[staffId]) dailyCounts[staffId] = {};
+    const key = dateKey(date);
+    if(!dailyCounts[staffId][key]) dailyCounts[staffId][key] = {};
+    if(value){ dailyCounts[staffId][key][duration] = value; }
+    else {
+      delete dailyCounts[staffId][key][duration];
+      if(Object.keys(dailyCounts[staffId][key]).length === 0) delete dailyCounts[staffId][key];
+    }
+  }
+  function valuesForStaff(staffId){
+    return periodDays.map(d => getDayValue(staffId, d));
+  }
+  function valuesForDuration(staffId, duration){
+    return periodDays.map(d => getCountValue(staffId, d, duration));
+  }
+  function getLeaveFlag(staffId, date){
+    const rec = leaveDates[staffId];
+    if(!rec) return false;
+    return !!rec[dateKey(date)];
+  }
+  function setLeaveFlag(staffId, date, flag){
+    if(!leaveDates[staffId]) leaveDates[staffId] = {};
+    const key = dateKey(date);
+    if(flag){ leaveDates[staffId][key] = true; }
+    else { delete leaveDates[staffId][key]; }
+  }
+
+  const opTimers = {};
+
+  async function commitDayValue(staffId, date, value){
+    setDayValue(staffId, date, value);
+    setSaveStatus('saving');
+    const key = 'time:' + staffId + ':' + dateKey(date);
+    if(opTimers[key]) clearTimeout(opTimers[key]);
+    opTimers[key] = setTimeout(async () => {
+      await saveDailyTimeLocal();
+      pushOp('setDayValue', {staffId, date: dateKey(date), value});
+      setSaveStatus('ok');
+    }, 500);
+  }
+
+  async function commitCountValue(staffId, date, duration, value){
+    setCountValue(staffId, date, duration, value);
+    setSaveStatus('saving');
+    const key = 'count:' + staffId + ':' + dateKey(date) + ':' + duration;
+    if(opTimers[key]) clearTimeout(opTimers[key]);
+    opTimers[key] = setTimeout(async () => {
+      await saveDailyCountsLocal();
+      pushOp('setCountValue', {staffId, date: dateKey(date), duration, value});
+      setSaveStatus('ok');
+    }, 500);
+  }
+
+  async function commitLeaveFlag(staffId, date, flag){
+    setLeaveFlag(staffId, date, flag);
+    setSaveStatus('saving');
+    await saveLeaveDatesLocal();
+    pushOp('setLeaveDate', {staffId, date: dateKey(date), value: flag ? 1 : 0});
+    setSaveStatus('ok');
+  }
+
+  async function commitStaffList(){
+    setSaveStatus('saving');
+    await saveStaffListLocal();
+    pushOp('setStaffList', {staffList});
+    setSaveStatus('ok');
+  }
+
+  function syncTimeFromCounts(staff, date){
+    let hours = 0;
+    durationsForCategory(staff.category).forEach(dur => {
+      hours += getCountValue(staff.id, date, dur) * (DURATION_HOURS[dur] || 0);
+    });
+    hours = Math.round(hours * 10) / 10;
+    commitDayValue(staff.id, date, hours);
+
+    const rref = rowRefs.find(r => r.staffId === staff.id);
+    if(rref){
+      const idx = periodDays.findIndex(d => dateKey(d) === dateKey(date));
+      if(idx >= 0){ rref.dayInputs[idx].value = hours ? hours : ''; }
+      updateSums();
+    }
+  }
+
+  function sumRange(arr, from, to){
+    let s = 0;
+    for(let i=from;i<to && i<arr.length;i++) s += (Number(arr[i]) || 0);
+    return s;
+  }
+  function fmtNum(n){
+    if(!n) return '0';
+    return (Math.round(n*100)/100).toString();
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderPeriodBar(){
+    const {main, sub} = periodLabelText(periodMode, currentYear, currentMonth);
+    $('periodLabel').innerHTML = `${main}<small>${sub}</small>`;
+    $('modeCycleBtn').classList.toggle('active', periodMode === 'cycle');
+    $('modeCalendarBtn').classList.toggle('active', periodMode === 'calendar');
+    $('jumpYear').value = currentYear;
+    $('jumpMonth').value = String(currentMonth);
+  }
+
+  function populateMonthSelect(){
+    const sel = $('jumpMonth');
+    sel.innerHTML = '';
+    for(let m=1;m<=12;m++){
+      const opt = document.createElement('option');
+      opt.value = String(m);
+      opt.textContent = m + '月';
+      sel.appendChild(opt);
+    }
+  }
+
+  function buildHeaderInto(dayRow, wdRow, roleLabel){
+    dayRow.innerHTML = '';
+    wdRow.innerHTML = '';
+
+    let th = document.createElement('th');
+    th.className = 'col-name'; th.textContent = 'スタッフ名';
+    dayRow.appendChild(th);
+    th = document.createElement('th');
+    th.className = 'col-role'; th.textContent = roleLabel;
+    dayRow.appendChild(th);
+
+    let th2 = document.createElement('th'); th2.className='col-name'; th2.textContent='';
+    wdRow.appendChild(th2);
+    th2 = document.createElement('th'); th2.className='col-role'; th2.textContent='';
+    wdRow.appendChild(th2);
+
+    periodDays.forEach((d) => {
+      const wd = d.getDay();
+      const holiday = isHolidayOrWeekend(d);
+      const thd = document.createElement('th');
+      thd.textContent = d.getDate();
+      if(wd === 0) thd.classList.add('sun');
+      if(wd === 6) thd.classList.add('sat');
+      if(holiday) thd.classList.add('holiday-col');
+      dayRow.appendChild(thd);
+
+      const thw = document.createElement('th');
+      thw.textContent = WEEKDAY_JA[wd];
+      if(wd === 0) thw.classList.add('sun');
+      if(wd === 6) thw.classList.add('sat');
+      if(holiday) thw.classList.add('holiday-col');
+      wdRow.appendChild(thw);
+    });
+
+    ['計','前半計 (1〜15日目)','後半計 (16日目〜)'].forEach(label => {
+      const thd = document.createElement('th');
+      thd.className = 'sum-col';
+      thd.textContent = label.split(' ')[0];
+      thd.title = label;
+      dayRow.appendChild(thd);
+      const thw = document.createElement('th');
+      thw.className = 'sum-col';
+      wdRow.appendChild(thw);
+    });
+  }
+  function buildHeader(){ buildHeaderInto($('headDayRow'), $('headWeekdayRow'), '職種'); }
+  function buildCountHeader(){ buildHeaderInto($('headCountDayRow'), $('headCountWeekdayRow'), '提供時間'); }
+
+  let rowRefs = [];
+  let groupRefs = {};
+  let grandRefs = null;
+
+  function buildBody(){
+    const tbody = $('tableBody');
+    tbody.innerHTML = '';
+    rowRefs = []; groupRefs = {}; grandRefs = null;
+
+    if(staffList.length === 0){
+      $('emptyState').style.display = 'block';
+      $('mainTable').style.display = 'none';
+      return;
+    }
+    $('emptyState').style.display = 'none';
+    $('mainTable').style.display = 'table';
+
+    const groups = [];
+    const groupMap = {};
+    staffList.forEach(s => {
+      if(!groupMap[s.category]){ groupMap[s.category] = []; groups.push(s.category); }
+      groupMap[s.category].push(s);
+    });
+
+    groups.forEach(cat => {
+      groupMap[cat].forEach(staff => {
+        const tr = document.createElement('tr');
+        tr.className = 'staff-row';
+
+        const tdName = document.createElement('td');
+        tdName.className = 'col-name';
+        tdName.innerHTML = `<span>${escapeHtml(staff.name)}</span><button class="row-edit-btn" data-edit="${staff.id}">編集</button>`;
+        tr.appendChild(tdName);
+
+        const tdRole = document.createElement('td');
+        tdRole.className = 'col-role';
+        tdRole.textContent = staff.role || '';
+        tr.appendChild(tdRole);
+
+        const dayInputs = [];
+        periodDays.forEach((d, idx) => {
+          const td = document.createElement('td');
+          td.className = 'day-cell';
+          const wd = d.getDay();
+          if(wd === 0) td.classList.add('sun-col');
+          if(wd === 6) td.classList.add('sat-col');
+          if(isHolidayOrWeekend(d)) td.classList.add('holiday-col');
+          if((staff.offDays || []).includes(wd)) td.classList.add('staff-off');
+          if(getLeaveFlag(staff.id, d)) td.classList.add('leave-day');
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.step = '0.1';
+          input.min = '0';
+          input.placeholder = '-';
+          const v = getDayValue(staff.id, d);
+          input.value = v ? v : '';
+          input.addEventListener('input', () => {
+            const val = parseFloat(input.value);
+            commitDayValue(staff.id, d, isNaN(val) ? 0 : val);
+            updateSums();
+          });
+          const leaveCb = document.createElement('input');
+          leaveCb.type = 'checkbox';
+          leaveCb.className = 'leave-toggle';
+          leaveCb.title = '有給・個別の休み';
+          leaveCb.checked = getLeaveFlag(staff.id, d);
+          leaveCb.addEventListener('change', () => {
+            const flag = leaveCb.checked;
+            td.classList.toggle('leave-day', flag);
+            commitLeaveFlag(staff.id, d, flag);
+            if(flag){
+              input.value = '';
+              commitDayValue(staff.id, d, 0);
+              updateSums();
+            }
+          });
+          td.appendChild(input);
+          td.appendChild(leaveCb);
+          tr.appendChild(td);
+          dayInputs.push(input);
+        });
+
+        const tdTotal = document.createElement('td'); tdTotal.className = 'sum-col total-strong';
+        const tdFirst = document.createElement('td'); tdFirst.className = 'sum-col';
+        const tdSecond = document.createElement('td'); tdSecond.className = 'sum-col';
+        tr.appendChild(tdTotal); tr.appendChild(tdFirst); tr.appendChild(tdSecond);
+
+        tbody.appendChild(tr);
+        rowRefs.push({staffId: staff.id, category: cat, tdTotal, tdFirst, tdSecond, dayInputs});
+      });
+
+      const trg = document.createElement('tr');
+      trg.className = 'group-subtotal';
+      const tdn = document.createElement('td'); tdn.className='col-name'; tdn.textContent = cat + '計';
+      trg.appendChild(tdn);
+      const tdr = document.createElement('td'); tdr.className='col-role'; tdr.textContent='';
+      trg.appendChild(tdr);
+      const dayCells = periodDays.map(() => {
+        const td = document.createElement('td'); td.className='sum-col';
+        trg.appendChild(td);
+        return td;
+      });
+      const gTotal = document.createElement('td'); gTotal.className='sum-col';
+      const gFirst = document.createElement('td'); gFirst.className='sum-col';
+      const gSecond = document.createElement('td'); gSecond.className='sum-col';
+      trg.appendChild(gTotal); trg.appendChild(gFirst); trg.appendChild(gSecond);
+      tbody.appendChild(trg);
+      groupRefs[cat] = {dayCells, tdTotal:gTotal, tdFirst:gFirst, tdSecond:gSecond};
+    });
+
+    const trAll = document.createElement('tr');
+    trAll.className = 'grand-total';
+    const tdnAll = document.createElement('td'); tdnAll.className='col-name'; tdnAll.textContent = '事業所計';
+    trAll.appendChild(tdnAll);
+    const tdrAll = document.createElement('td'); tdrAll.className='col-role'; tdrAll.textContent='';
+    trAll.appendChild(tdrAll);
+    const grandDayCells = periodDays.map(() => {
+      const td = document.createElement('td'); td.className='sum-col';
+      trAll.appendChild(td);
+      return td;
+    });
+    const allTotal = document.createElement('td'); allTotal.className='sum-col';
+    const allFirst = document.createElement('td'); allFirst.className='sum-col';
+    const allSecond = document.createElement('td'); allSecond.className='sum-col';
+    trAll.appendChild(allTotal); trAll.appendChild(allFirst); trAll.appendChild(allSecond);
+    tbody.appendChild(trAll);
+    grandRefs = {dayCells: grandDayCells, tdTotal: allTotal, tdFirst: allFirst, tdSecond: allSecond};
+
+    tbody.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openStaffModal(btn.getAttribute('data-edit')));
+    });
+
+    updateSums();
+  }
+
+  function updateSums(){
+    const grandDayTotals = new Array(periodDays.length).fill(0);
+    let grandFirst = 0, grandSecond = 0, grandAll = 0;
+    const groupAgg = {};
+
+    rowRefs.forEach(row => {
+      const values = valuesForStaff(row.staffId);
+      const total = sumRange(values, 0, periodDays.length);
+      const first = sumRange(values, 0, 15);
+      const second = sumRange(values, 15, periodDays.length);
+      row.tdTotal.textContent = fmtNum(total);
+      row.tdFirst.textContent = fmtNum(first);
+      row.tdSecond.textContent = fmtNum(second);
+
+      if(!groupAgg[row.category]){
+        groupAgg[row.category] = {dayTotals: new Array(periodDays.length).fill(0), first:0, second:0, all:0};
+      }
+      const g = groupAgg[row.category];
+      for(let i=0;i<periodDays.length;i++) g.dayTotals[i] += (Number(values[i]) || 0);
+      g.first += first; g.second += second; g.all += total;
+    });
+
+    Object.keys(groupRefs).forEach(cat => {
+      const ref = groupRefs[cat];
+      const g = groupAgg[cat] || {dayTotals:new Array(periodDays.length).fill(0), first:0, second:0, all:0};
+      g.dayTotals.forEach((v, i) => { ref.dayCells[i].textContent = fmtNum(v); });
+      ref.tdTotal.textContent = fmtNum(g.all);
+      ref.tdFirst.textContent = fmtNum(g.first);
+      ref.tdSecond.textContent = fmtNum(g.second);
+      for(let i=0;i<periodDays.length;i++) grandDayTotals[i] += g.dayTotals[i];
+      grandFirst += g.first; grandSecond += g.second; grandAll += g.all;
+    });
+
+    if(grandRefs){
+      grandDayTotals.forEach((v,i) => { grandRefs.dayCells[i].textContent = fmtNum(v); });
+      grandRefs.tdTotal.textContent = fmtNum(grandAll);
+      grandRefs.tdFirst.textContent = fmtNum(grandFirst);
+      grandRefs.tdSecond.textContent = fmtNum(grandSecond);
+    }
+  }
+
+  let countStaffRefs = [];
+  let countGroupRefs = {};
+  let countGrandRefs = null;
+
+  function buildCountBody(){
+    const tbody = $('countTableBody');
+    tbody.innerHTML = '';
+    countStaffRefs = []; countGroupRefs = {}; countGrandRefs = null;
+
+    if(staffList.length === 0){
+      $('countEmptyState').style.display = 'block';
+      $('countTable').style.display = 'none';
+      renderCountSummary();
+      return;
+    }
+    $('countEmptyState').style.display = 'none';
+    $('countTable').style.display = 'table';
+
+    const groups = [];
+    const groupMap = {};
+    staffList.forEach(s => {
+      if(!groupMap[s.category]){ groupMap[s.category] = []; groups.push(s.category); }
+      groupMap[s.category].push(s);
+    });
+
+    groups.forEach(cat => {
+      groupMap[cat].forEach(staff => {
+        const durations = durationsForCategory(staff.category);
+
+        const nameCell = document.createElement('td');
+        nameCell.className = 'col-name';
+        nameCell.rowSpan = durations.length + 1;
+        nameCell.innerHTML = `<span>${escapeHtml(staff.name)}</span><button class="row-edit-btn" data-edit="${staff.id}">編集</button>`;
+
+        const durationRefs = {};
+        durations.forEach((dur, dIdx) => {
+          const tr = document.createElement('tr');
+          tr.className = 'duration-row';
+          if(dIdx === 0) tr.appendChild(nameCell);
+
+          const tdRole = document.createElement('td');
+          tdRole.className = 'col-role';
+          tdRole.textContent = dur;
+          tr.appendChild(tdRole);
+
+          periodDays.forEach((d, idx) => {
+            const td = document.createElement('td');
+            td.className = 'day-cell';
+            const wd = d.getDay();
+            if(wd === 0) td.classList.add('sun-col');
+            if(wd === 6) td.classList.add('sat-col');
+            if(isHolidayOrWeekend(d)) td.classList.add('holiday-col');
+            if((staff.offDays || []).includes(wd)) td.classList.add('staff-off');
+            if(getLeaveFlag(staff.id, d)) td.classList.add('leave-day');
+            const select = document.createElement('select');
+            select.className = 'count-select';
+            const blankOpt = document.createElement('option');
+            blankOpt.value = '0';
+            blankOpt.textContent = '-';
+            select.appendChild(blankOpt);
+            for(let n=1;n<=COUNT_MAX;n++){
+              const opt = document.createElement('option');
+              opt.value = String(n);
+              opt.textContent = String(n);
+              select.appendChild(opt);
+            }
+            const v = getCountValue(staff.id, d, dur);
+            select.value = String(v || 0);
+            select.addEventListener('change', () => {
+              const val = parseInt(select.value, 10);
+              commitCountValue(staff.id, d, dur, isNaN(val) ? 0 : val);
+              updateCountSums();
+              syncTimeFromCounts(staff, d);
+            });
+            td.appendChild(select);
+            tr.appendChild(td);
+          });
+
+          const durTdTotal = document.createElement('td'); durTdTotal.className = 'sum-col';
+          const durTdFirst = document.createElement('td'); durTdFirst.className = 'sum-col';
+          const durTdSecond = document.createElement('td'); durTdSecond.className = 'sum-col';
+          tr.appendChild(durTdTotal); tr.appendChild(durTdFirst); tr.appendChild(durTdSecond);
+          durationRefs[dur] = {tdTotal: durTdTotal, tdFirst: durTdFirst, tdSecond: durTdSecond};
+
+          tbody.appendChild(tr);
+        });
+
+        const trTotal = document.createElement('tr');
+        trTotal.className = 'duration-total-row';
+        const tdRole = document.createElement('td');
+        tdRole.className = 'col-role';
+        tdRole.textContent = '計';
+        trTotal.appendChild(tdRole);
+
+        const computedDayCells = periodDays.map((d) => {
+          const td = document.createElement('td');
+          td.className = 'day-cell readonly-cell';
+          const wd = d.getDay();
+          if(wd === 0) td.classList.add('sun-col');
+          if(wd === 6) td.classList.add('sat-col');
+          if(isHolidayOrWeekend(d)) td.classList.add('holiday-col');
+          if((staff.offDays || []).includes(wd)) td.classList.add('staff-off');
+          if(getLeaveFlag(staff.id, d)) td.classList.add('leave-day');
+          trTotal.appendChild(td);
+          return td;
+        });
+        const tdTotal = document.createElement('td'); tdTotal.className = 'sum-col total-strong';
+        const tdFirst = document.createElement('td'); tdFirst.className = 'sum-col';
+        const tdSecond = document.createElement('td'); tdSecond.className = 'sum-col';
+        trTotal.appendChild(tdTotal); trTotal.appendChild(tdFirst); trTotal.appendChild(tdSecond);
+        tbody.appendChild(trTotal);
+
+        countStaffRefs.push({staffId: staff.id, category: cat, durations, durationRefs, computedDayCells, tdTotal, tdFirst, tdSecond});
+      });
+
+      const trg = document.createElement('tr');
+      trg.className = 'group-subtotal';
+      const tdn = document.createElement('td'); tdn.className='col-name'; tdn.textContent = cat + '計';
+      trg.appendChild(tdn);
+      const tdr = document.createElement('td'); tdr.className='col-role'; tdr.textContent='';
+      trg.appendChild(tdr);
+      const dayCells = periodDays.map(() => {
+        const td = document.createElement('td'); td.className='sum-col';
+        trg.appendChild(td);
+        return td;
+      });
+      const gTotal = document.createElement('td'); gTotal.className='sum-col';
+      const gFirst = document.createElement('td'); gFirst.className='sum-col';
+      const gSecond = document.createElement('td'); gSecond.className='sum-col';
+      trg.appendChild(gTotal); trg.appendChild(gFirst); trg.appendChild(gSecond);
+      tbody.appendChild(trg);
+      countGroupRefs[cat] = {dayCells, tdTotal:gTotal, tdFirst:gFirst, tdSecond:gSecond};
+    });
+
+    const trAll = document.createElement('tr');
+    trAll.className = 'grand-total';
+    const tdnAll = document.createElement('td'); tdnAll.className='col-name'; tdnAll.textContent = '事業所計';
+    trAll.appendChild(tdnAll);
+    const tdrAll = document.createElement('td'); tdrAll.className='col-role'; tdrAll.textContent='';
+    trAll.appendChild(tdrAll);
+    const grandDayCells = periodDays.map(() => {
+      const td = document.createElement('td'); td.className='sum-col';
+      trAll.appendChild(td);
+      return td;
+    });
+    const allTotal = document.createElement('td'); allTotal.className='sum-col';
+    const allFirst = document.createElement('td'); allFirst.className='sum-col';
+    const allSecond = document.createElement('td'); allSecond.className='sum-col';
+    trAll.appendChild(allTotal); trAll.appendChild(allFirst); trAll.appendChild(allSecond);
+    tbody.appendChild(trAll);
+    countGrandRefs = {dayCells: grandDayCells, tdTotal: allTotal, tdFirst: allFirst, tdSecond: allSecond};
+
+    tbody.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openStaffModal(btn.getAttribute('data-edit')));
+    });
+
+    updateCountSums();
+  }
+
+  function updateCountSums(){
+    const grandDayTotals = new Array(periodDays.length).fill(0);
+    let grandFirst = 0, grandSecond = 0, grandAll = 0;
+    const groupAgg = {};
+
+    countStaffRefs.forEach(ref => {
+      const perDay = new Array(periodDays.length).fill(0);
+      ref.durations.forEach(dur => {
+        const vals = valuesForDuration(ref.staffId, dur);
+        for(let i=0;i<periodDays.length;i++) perDay[i] += vals[i];
+
+        const dref = ref.durationRefs[dur];
+        if(dref){
+          const dTotal = sumRange(vals, 0, periodDays.length);
+          const dFirst = sumRange(vals, 0, 15);
+          const dSecond = sumRange(vals, 15, periodDays.length);
+          dref.tdTotal.textContent = fmtNum(dTotal);
+          dref.tdFirst.textContent = fmtNum(dFirst);
+          dref.tdSecond.textContent = fmtNum(dSecond);
+        }
+      });
+      ref.computedDayCells.forEach((td,i) => { td.textContent = fmtNum(perDay[i]); });
+      const total = sumRange(perDay, 0, periodDays.length);
+      const first = sumRange(perDay, 0, 15);
+      const second = sumRange(perDay, 15, periodDays.length);
+      ref.tdTotal.textContent = fmtNum(total);
+      ref.tdFirst.textContent = fmtNum(first);
+      ref.tdSecond.textContent = fmtNum(second);
+
+      if(!groupAgg[ref.category]){
+        groupAgg[ref.category] = {dayTotals: new Array(periodDays.length).fill(0), first:0, second:0, all:0};
+      }
+      const g = groupAgg[ref.category];
+      for(let i=0;i<periodDays.length;i++) g.dayTotals[i] += perDay[i];
+      g.first += first; g.second += second; g.all += total;
+    });
+
+    Object.keys(countGroupRefs).forEach(cat => {
+      const ref = countGroupRefs[cat];
+      const g = groupAgg[cat] || {dayTotals:new Array(periodDays.length).fill(0), first:0, second:0, all:0};
+      g.dayTotals.forEach((v,i) => { ref.dayCells[i].textContent = fmtNum(v); });
+      ref.tdTotal.textContent = fmtNum(g.all);
+      ref.tdFirst.textContent = fmtNum(g.first);
+      ref.tdSecond.textContent = fmtNum(g.second);
+      for(let i=0;i<periodDays.length;i++) grandDayTotals[i] += g.dayTotals[i];
+      grandFirst += g.first; grandSecond += g.second; grandAll += g.all;
+    });
+
+    if(countGrandRefs){
+      grandDayTotals.forEach((v,i) => { countGrandRefs.dayCells[i].textContent = fmtNum(v); });
+      countGrandRefs.tdTotal.textContent = fmtNum(grandAll);
+      countGrandRefs.tdFirst.textContent = fmtNum(grandFirst);
+      countGrandRefs.tdSecond.textContent = fmtNum(grandSecond);
+    }
+
+    renderCountSummary();
+  }
+
+  // 期間全体で「20分は何件、1時間は何件…」を区分ごとに一目で見せるサマリー
+  function renderCountSummary(){
+    const container = $('countSummary');
+    if(!container) return;
+    container.innerHTML = '';
+    if(staffList.length === 0) return;
+
+    const groups = [];
+    const groupMap = {};
+    staffList.forEach(s => {
+      if(!groupMap[s.category]){ groupMap[s.category] = []; groups.push(s.category); }
+      groupMap[s.category].push(s);
+    });
+
+    groups.forEach(cat => {
+      const durations = durationsForCategory(cat);
+      const totals = {};
+      let grand = 0;
+      durations.forEach(dur => {
+        let sum = 0;
+        groupMap[cat].forEach(staff => {
+          sum += valuesForDuration(staff.id, dur).reduce((a,b) => a + b, 0);
+        });
+        totals[dur] = sum;
+        grand += sum;
+      });
+
+      const groupEl = document.createElement('div');
+      groupEl.className = 'summary-group';
+      const h = document.createElement('h4');
+      h.textContent = cat + '　提供時間別件数（期間合計）';
+      groupEl.appendChild(h);
+
+      const badges = document.createElement('div');
+      badges.className = 'summary-badges';
+      durations.forEach(dur => {
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.innerHTML = `${dur} <b>${totals[dur]}</b>件`;
+        badges.appendChild(b);
+      });
+      const totalBadge = document.createElement('span');
+      totalBadge.className = 'badge total';
+      totalBadge.innerHTML = `計 <b>${grand}</b>件`;
+      badges.appendChild(totalBadge);
+      groupEl.appendChild(badges);
+
+      const staffList2 = document.createElement('div');
+      staffList2.className = 'summary-staff-list';
+      groupMap[cat].forEach(staff => {
+        const row = document.createElement('div');
+        row.className = 'summary-staff-row';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'summary-staff-name';
+        nameEl.textContent = staff.name;
+        row.appendChild(nameEl);
+
+        const staffBadges = document.createElement('div');
+        staffBadges.className = 'summary-badges';
+        let staffGrand = 0;
+        durations.forEach(dur => {
+          const sum = valuesForDuration(staff.id, dur).reduce((a,b) => a + b, 0);
+          staffGrand += sum;
+          const b = document.createElement('span');
+          b.className = 'badge small';
+          b.innerHTML = `${dur} <b>${sum}</b>件`;
+          staffBadges.appendChild(b);
+        });
+        const sBadge = document.createElement('span');
+        sBadge.className = 'badge small total';
+        sBadge.innerHTML = `計 <b>${staffGrand}</b>件`;
+        staffBadges.appendChild(sBadge);
+        row.appendChild(staffBadges);
+
+        staffList2.appendChild(row);
+      });
+      groupEl.appendChild(staffList2);
+
+      container.appendChild(groupEl);
+    });
+  }
+
+  function goToPeriod(mode, y, m){
+    periodMode = mode; currentYear = y; currentMonth = m;
+    periodDays = getPeriodDates(mode, y, m);
+    renderPeriodBar();
+    buildHeader();
+    buildCountHeader();
+    buildBody();
+    buildCountBody();
+  }
+
+  function shiftPeriod(delta){
+    let m = currentMonth + delta;
+    let y = currentYear;
+    while(m > 12){ m -= 12; y += 1; }
+    while(m < 1){ m += 12; y -= 1; }
+    goToPeriod(periodMode, y, m);
+  }
+
+  function switchView(view){
+    currentView = view;
+    $('tabTimeBtn').classList.toggle('active', view === 'time');
+    $('tabCountBtn').classList.toggle('active', view === 'count');
+    $('timeTableShell').style.display = view === 'time' ? '' : 'none';
+    $('countTableShell').style.display = view === 'count' ? '' : 'none';
+  }
+
+  let selectedOffDays = [];
+  function renderOffdayChips(){
+    const container = $('offdayChips');
+    container.innerHTML = '';
+    WEEKDAY_JA.forEach((label, idx) => {
+      const chip = document.createElement('span');
+      chip.className = 'offday-chip' + (selectedOffDays.includes(idx) ? ' active' : '');
+      chip.textContent = label;
+      chip.addEventListener('click', () => {
+        const pos = selectedOffDays.indexOf(idx);
+        if(pos >= 0){ selectedOffDays.splice(pos,1); } else { selectedOffDays.push(idx); }
+        renderOffdayChips();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function openStaffModal(staffId){
+    editingStaffId = staffId || null;
+    const s = editingStaffId ? staffList.find(x => x.id === editingStaffId) : null;
+    $('modalTitle').textContent = s ? 'スタッフ編集' : 'スタッフ追加';
+    $('fldName').value = s ? s.name : '';
+    $('fldCategory').value = s ? s.category : '看護';
+    $('fldRole').value = s ? s.role : '';
+    selectedOffDays = s && s.offDays ? s.offDays.slice() : [];
+    renderOffdayChips();
+    $('deleteStaffBtn').style.display = s ? 'inline-flex' : 'none';
+    $('modalOverlay').style.display = 'flex';
+    setTimeout(() => $('fldName').focus(), 50);
+  }
+  function closeStaffModal(){
+    $('modalOverlay').style.display = 'none';
+    editingStaffId = null;
+  }
+  async function saveStaffModal(){
+    const name = $('fldName').value.trim();
+    if(!name){ $('fldName').focus(); return; }
+    const category = $('fldCategory').value;
+    const role = $('fldRole').value.trim();
+    const offDays = selectedOffDays.slice();
+    if(editingStaffId){
+      const s = staffList.find(x => x.id === editingStaffId);
+      s.name = name; s.category = category; s.role = role; s.offDays = offDays;
+    } else {
+      staffList.push({ id: 's' + Date.now() + Math.floor(Math.random()*1000), name, category, role, offDays });
+    }
+    await commitStaffList();
+    closeStaffModal();
+    buildBody();
+    buildCountBody();
+  }
+  async function deleteStaffModal(){
+    if(!editingStaffId) return;
+    if(!confirm('このスタッフを削除しますか？（過去の入力データは残ります）')) return;
+    staffList = staffList.filter(x => x.id !== editingStaffId);
+    await commitStaffList();
+    closeStaffModal();
+    buildBody();
+    buildCountBody();
+  }
+
+  function buildExportTables(){
+    const timeHeader = ['スタッフ名','職種', ...periodDays.map(d => d.getDate() + '(' + WEEKDAY_JA[d.getDay()] + ')'), '計','前半計(1-15)','後半計(16-)'];
+    const timeRows = [];
+
+    const groups = [];
+    const groupMap = {};
+    staffList.forEach(s => {
+      if(!groupMap[s.category]){ groupMap[s.category]=[]; groups.push(s.category); }
+      groupMap[s.category].push(s);
+    });
+
+    const grandDayTotals = new Array(periodDays.length).fill(0);
+    let grandFirst=0, grandSecond=0, grandAll=0;
+
+    groups.forEach(cat => {
+      const members = groupMap[cat];
+      const groupDayTotals = new Array(periodDays.length).fill(0);
+      let groupFirst=0, groupSecond=0, groupAll=0;
+      members.forEach(staff => {
+        const values = valuesForStaff(staff.id);
+        const total = sumRange(values,0,periodDays.length);
+        const first = sumRange(values,0,15);
+        const second = sumRange(values,15,periodDays.length);
+        timeRows.push([staff.name, staff.role||'', ...values.map(v => fmtNum(v)), fmtNum(total), fmtNum(first), fmtNum(second)]);
+        for(let i=0;i<periodDays.length;i++) groupDayTotals[i]+= (Number(values[i])||0);
+        groupFirst+=first; groupSecond+=second; groupAll+=total;
+      });
+      timeRows.push([cat+'計','', ...groupDayTotals.map(v=>fmtNum(v)), fmtNum(groupAll), fmtNum(groupFirst), fmtNum(groupSecond)]);
+      for(let i=0;i<periodDays.length;i++) grandDayTotals[i]+=groupDayTotals[i];
+      grandFirst+=groupFirst; grandSecond+=groupSecond; grandAll+=groupAll;
+    });
+    timeRows.push(['事業所計','', ...grandDayTotals.map(v=>fmtNum(v)), fmtNum(grandAll), fmtNum(grandFirst), fmtNum(grandSecond)]);
+
+    const countHeader = ['スタッフ名','提供時間', ...periodDays.map(d => d.getDate() + '(' + WEEKDAY_JA[d.getDay()] + ')'), '計','前半計(1-15)','後半計(16-)'];
+    const countRows = [];
+
+    const cGrandDayTotals = new Array(periodDays.length).fill(0);
+    let cGrandFirst=0, cGrandSecond=0, cGrandAll=0;
+
+    groups.forEach(cat => {
+      const members = groupMap[cat];
+      const cGroupDayTotals = new Array(periodDays.length).fill(0);
+      let cGroupFirst=0, cGroupSecond=0, cGroupAll=0;
+      members.forEach(staff => {
+        const durations = durationsForCategory(staff.category);
+        const perDay = new Array(periodDays.length).fill(0);
+        durations.forEach(dur => {
+          const vals = valuesForDuration(staff.id, dur);
+          countRows.push([staff.name, dur, ...vals.map(v => fmtNum(v)), fmtNum(sumRange(vals,0,periodDays.length)), fmtNum(sumRange(vals,0,15)), fmtNum(sumRange(vals,15,periodDays.length))]);
+          for(let i=0;i<periodDays.length;i++) perDay[i] += vals[i];
+        });
+        const total = sumRange(perDay,0,periodDays.length);
+        const first = sumRange(perDay,0,15);
+        const second = sumRange(perDay,15,periodDays.length);
+        countRows.push(['', '計', ...perDay.map(v=>fmtNum(v)), fmtNum(total), fmtNum(first), fmtNum(second)]);
+        for(let i=0;i<periodDays.length;i++) cGroupDayTotals[i]+=perDay[i];
+        cGroupFirst+=first; cGroupSecond+=second; cGroupAll+=total;
+      });
+      countRows.push([cat+'計','', ...cGroupDayTotals.map(v=>fmtNum(v)), fmtNum(cGroupAll), fmtNum(cGroupFirst), fmtNum(cGroupSecond)]);
+      for(let i=0;i<periodDays.length;i++) cGrandDayTotals[i]+=cGroupDayTotals[i];
+      cGrandFirst+=cGroupFirst; cGrandSecond+=cGroupSecond; cGrandAll+=cGroupAll;
+    });
+    countRows.push(['事業所計','', ...cGrandDayTotals.map(v=>fmtNum(v)), fmtNum(cGrandAll), fmtNum(cGrandFirst), fmtNum(cGrandSecond)]);
+
+    return {
+      timeTable: {headers: timeHeader, rows: timeRows},
+      countTable: {headers: countHeader, rows: countRows}
+    };
+  }
+
+  function exportCsv(){
+    if(staffList.length === 0){ alert('スタッフが登録されていません。'); return; }
+    const {timeTable, countTable} = buildExportTables();
+    const rows = [];
+    rows.push(timeTable.headers);
+    timeTable.rows.forEach(r => rows.push(r));
+    rows.push([]);
+    rows.push(['■ 訪問件数']);
+    rows.push(countTable.headers);
+    countTable.rows.forEach(r => rows.push(r));
+
+    const csv = rows.map(r => r.map(c => {
+      const s = String(c);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }).join(',')).join('\r\n');
+
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const modeTag = periodMode === 'calendar' ? '暦月' : '16日締';
+    a.download = `訪問時間_${currentYear}-${pad2(currentMonth)}_${modeTag}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function clearPeriod(){
+    if(!confirm('この期間の「訪問時間」「訪問件数」の入力内容をすべてクリアします。よろしいですか？')) return;
+    setSaveStatus('saving');
+    staffList.forEach(s => {
+      periodDays.forEach(d => {
+        setDayValue(s.id, d, 0);
+        durationsForCategory(s.category).forEach(dur => setCountValue(s.id, d, dur, 0));
+        setLeaveFlag(s.id, d, false);
+      });
+    });
+    await saveDailyTimeLocal();
+    await saveDailyCountsLocal();
+    await saveLeaveDatesLocal();
+    pushOp('clearPeriod', { staffIds: staffList.map(s => s.id), dates: periodDays.map(d => dateKey(d)) });
+    setSaveStatus('ok');
+    buildBody();
+    buildCountBody();
+  }
+
+  function openSheetModal(){
+    $('fldSheetUrl').value = sheetUrl;
+    $('sheetSyncStatus').textContent = sheetUrl
+      ? (sharedModeActive ? '現在、共有スプレッドシートと同期しています。' : '前回、共有データの取得に失敗しています。URLを確認してください。')
+      : 'URLが未設定です。ウェブアプリのURLを貼り付けると、複数端末でデータを共有できます。';
+    $('sheetModalOverlay').style.display = 'flex';
+  }
+  function closeSheetModal(){
+    $('sheetModalOverlay').style.display = 'none';
+  }
+  async function saveSheetModal(){
+    sheetUrl = $('fldSheetUrl').value.trim();
+    await saveSheetSettings();
+    closeSheetModal();
+    if(sheetUrl){
+      const ok = await refreshFromSheet(false);
+      goToPeriod(periodMode, currentYear, currentMonth);
+      setSyncBarStatus(ok ? '共有スプレッドシートに接続しました。' : '共有データを取得できませんでした。URLをご確認ください。');
+    } else {
+      sharedModeActive = false;
+      updateSyncBar();
+    }
+  }
+
+  async function init(){
+    populateMonthSelect();
+
+    const now = new Date();
+    let y = now.getFullYear();
+    let m = now.getMonth()+1;
+    if(now.getDate() < 16){ m -= 1; if(m<1){m=12;y-=1;} }
+
+    await loadStaffList();
+    await loadDailyData();
+    await loadSheetSettings();
+    await loadHolidays();
+
+    if(sheetUrl){
+      await refreshFromSheet(false);
+    }
+    updateSyncBar();
+
+    goToPeriod('cycle', y, m);
+
+    $('modeCycleBtn').addEventListener('click', () => goToPeriod('cycle', currentYear, currentMonth));
+    $('modeCalendarBtn').addEventListener('click', () => goToPeriod('calendar', currentYear, currentMonth));
+    $('prevPeriod').addEventListener('click', () => shiftPeriod(-1));
+    $('nextPeriod').addEventListener('click', () => shiftPeriod(1));
+    $('jumpYear').addEventListener('change', () => {
+      const y2 = parseInt($('jumpYear').value, 10);
+      if(!isNaN(y2)) goToPeriod(periodMode, y2, currentMonth);
+    });
+    $('jumpMonth').addEventListener('change', () => {
+      const m2 = parseInt($('jumpMonth').value, 10);
+      goToPeriod(periodMode, currentYear, m2);
+    });
+    $('tabTimeBtn').addEventListener('click', () => switchView('time'));
+    $('tabCountBtn').addEventListener('click', () => switchView('count'));
+    $('addStaffBtn').addEventListener('click', () => openStaffModal(null));
+    $('exportBtn').addEventListener('click', exportCsv);
+    $('clearPeriodBtn').addEventListener('click', clearPeriod);
+    $('modalCancelBtn').addEventListener('click', closeStaffModal);
+    $('modalSaveBtn').addEventListener('click', saveStaffModal);
+    $('deleteStaffBtn').addEventListener('click', deleteStaffModal);
+    $('modalOverlay').addEventListener('click', (e) => { if(e.target.id === 'modalOverlay') closeStaffModal(); });
+
+    $('sheetSettingsBtn').addEventListener('click', openSheetModal);
+    $('sheetModalCancelBtn').addEventListener('click', closeSheetModal);
+    $('sheetModalSaveBtn').addEventListener('click', saveSheetModal);
+    $('sheetSyncNowBtn').addEventListener('click', async () => {
+      if(!$('fldSheetUrl').value.trim()){ $('sheetSyncStatus').textContent = 'URLを入力してください。'; return; }
+      sheetUrl = $('fldSheetUrl').value.trim();
+      await saveSheetSettings();
+      $('sheetSyncStatus').textContent = '取得中…';
+      const ok = await refreshFromSheet(false);
+      $('sheetSyncStatus').textContent = ok ? '最新の共有データを取得しました。' : '取得に失敗しました。URLをご確認ください。';
+      if(ok){ goToPeriod(periodMode, currentYear, currentMonth); }
+      updateSyncBar();
+    });
+    $('sheetModalOverlay').addEventListener('click', (e) => { if(e.target.id === 'sheetModalOverlay') closeSheetModal(); });
+
+    $('syncBarRefreshBtn').addEventListener('click', async () => {
+      const ok = await refreshFromSheet(true);
+      if(ok){ goToPeriod(periodMode, currentYear, currentMonth); }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible' && sheetUrl){
+        refreshFromSheet(false).then(ok => { if(ok){ goToPeriod(periodMode, currentYear, currentMonth); } });
+      }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
